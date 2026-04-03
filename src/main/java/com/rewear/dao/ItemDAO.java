@@ -59,9 +59,18 @@ public class ItemDAO {
     private static final String UPDATE_STATUS =
             "UPDATE ITEMS SET status = ? WHERE item_id = ?";
 
+    private static final String DELETE_ITEM =
+            "DELETE FROM ITEMS WHERE item_id = ?";
+
     private static final String LIST_CATEGORIES = "SELECT category_id, name FROM CATEGORY ORDER BY name";
     private static final String LIST_SIZES = "SELECT size_id, label FROM SIZE ORDER BY size_id";
     private static final String LIST_CONDITIONS = "SELECT condition_id, label FROM ITEM_CONDITION ORDER BY condition_id";
+
+    private static final String CHECK_ITEM_IN_EXCHANGES =
+            "SELECT COUNT(*) FROM EXCHANGE_ITEMS WHERE item_id = ?";
+
+    private static final String DELETE_EXCHANGE_ITEMS =
+            "DELETE FROM EXCHANGE_ITEMS WHERE item_id = ?";
 
     public int insertItem(int ownerUserId, int categoryId, int sizeId, int conditionId,
                           String itemName, String brand, String description, int pointsValue,
@@ -188,6 +197,64 @@ public class ItemDAO {
             int n = ps.executeUpdate();
             if (n != 1) {
                 throw new SQLException("Failed to update item status.");
+            }
+        }
+    }
+
+    /**
+     * Counts how many exchanges reference this item.
+     *
+     * @param itemId the ID of the item
+     * @return number of exchanges containing this item
+     * @throws SQLException if query fails
+     */
+    public int countExchangesForItem(int itemId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(CHECK_ITEM_IN_EXCHANGES)) {
+            ps.setInt(1, itemId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Deletes an item by ID.
+     * First deletes all EXCHANGE_ITEMS referencing this item (in case cascade isn't enabled).
+     * Then deletes the ITEM (cascade delete automatically removes ITEM_IMAGES).
+     *
+     * @param itemId the ID of the item to delete
+     * @throws SQLException if deletion fails
+     */
+    public void deleteItem(int itemId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // First delete all exchange items (in case cascade isn't set up)
+                try (PreparedStatement ps = conn.prepareStatement(DELETE_EXCHANGE_ITEMS)) {
+                    ps.setInt(1, itemId);
+                    ps.executeUpdate();
+                }
+
+                // Then delete the item itself
+                // (CASCADE DELETE will handle ITEM_IMAGES)
+                try (PreparedStatement ps = conn.prepareStatement(DELETE_ITEM)) {
+                    ps.setInt(1, itemId);
+                    int n = ps.executeUpdate();
+                    if (n != 1) {
+                        throw new SQLException("Item not found or already deleted.");
+                    }
+                }
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
             }
         }
     }

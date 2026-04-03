@@ -2,7 +2,9 @@ package com.rewear.ui;
 
 import com.rewear.Session;
 import com.rewear.dao.UserDAO;
+import com.rewear.exceptions.ValidationException;
 import com.rewear.models.User;
+import com.rewear.validators.InputValidator;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -62,11 +64,17 @@ public class LoginFrame extends JFrame {
     private void doLogin() {
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
+        
+        // Basic empty field validation
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Enter username and password.", "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
+        
         try {
+            // Validate username format
+            InputValidator.validateUsername(username);
+            
             var opt = userDAO.login(username, password);
             if (opt.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login failed", JOptionPane.ERROR_MESSAGE);
@@ -76,6 +84,8 @@ public class LoginFrame extends JFrame {
             Session.setCurrentUser(u);
             dispose();
             new DashboardFrame().setVisible(true);
+        } catch (ValidationException vex) {
+            JOptionPane.showMessageDialog(this, vex.getMessage(), "Validation Error", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }

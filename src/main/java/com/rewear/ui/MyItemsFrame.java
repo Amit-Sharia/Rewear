@@ -79,9 +79,12 @@ public class MyItemsFrame extends JFrame {
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton refresh = new JButton("Refresh");
+        JButton removeBtn = new JButton("Remove Item");
         JButton close = new JButton("Close");
         refresh.addActionListener(e -> reload());
+        removeBtn.addActionListener(e -> removeSelectedItem());
         close.addActionListener(e -> dispose());
+        actions.add(removeBtn);
         actions.add(refresh);
         actions.add(close);
         root.add(actions, BorderLayout.SOUTH);
@@ -141,6 +144,52 @@ public class MyItemsFrame extends JFrame {
         MyItemRow item = rows.get(row);
         detailsArea.setText(item.getDescription() == null ? "" : item.getDescription());
         renderImage(item.getImageUrl());
+    }
+
+    private void removeSelectedItem() {
+        int row = table.getSelectedRow();
+        if (row < 0 || row >= rows.size()) {
+            JOptionPane.showMessageDialog(this, "Please select an item to remove.", "No Selection",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        MyItemRow item = rows.get(row);
+
+        // Check if item is in any exchanges
+        try {
+            int exchangeCount = itemDAO.countExchangesForItem(item.getItemId());
+            String message;
+            if (exchangeCount > 0) {
+                message = "Are you sure you want to delete \"" + item.getItemName() + "\"?\n\n" +
+                        "This item is part of " + exchangeCount + " exchange(s).\n" +
+                        "All related exchange records will also be removed.\n\n" +
+                        "This action cannot be undone.";
+            } else {
+                message = "Are you sure you want to delete \"" + item.getItemName() + "\"?\n\n" +
+                        "This action cannot be undone.";
+            }
+
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    message,
+                    "Confirm Delete",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirm != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            itemDAO.deleteItem(item.getItemId());
+            JOptionPane.showMessageDialog(this, "Item deleted successfully.", "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+            reload();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, 
+                    "Could not delete item:\n" + ex.getMessage() + 
+                    "\n\nIf this persists, contact support.", 
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void renderImage(String imageRef) {
