@@ -13,11 +13,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Data access for {@code ITEMS}, {@code CATEGORY}, {@code SIZE}, {@code ITEM_CONDITION}, {@code ITEM_IMAGES}.
  */
-public class ItemDAO {
+public class ItemDAO implements IDataAccessObject<Item, Integer> {
 
     private static final String INSERT_ITEM =
             "INSERT INTO ITEMS (owner_user_id, category_id, size_id, condition_id, item_name, brand, "
@@ -55,6 +56,18 @@ public class ItemDAO {
     private static final String SELECT_BY_ID_FOR_UPDATE =
             "SELECT item_id, owner_user_id, category_id, size_id, condition_id, item_name, brand, description, "
                     + "points_value, status FROM ITEMS WHERE item_id = ? FOR UPDATE";
+
+    private static final String SELECT_ITEM_BY_ID =
+            "SELECT item_id, owner_user_id, category_id, size_id, condition_id, item_name, brand, description, "
+                    + "points_value, status FROM ITEMS WHERE item_id = ?";
+
+    private static final String SELECT_ALL_ITEMS =
+            "SELECT item_id, owner_user_id, category_id, size_id, condition_id, item_name, brand, description, "
+                    + "points_value, status FROM ITEMS";
+
+    private static final String UPDATE_ITEM =
+            "UPDATE ITEMS SET owner_user_id = ?, category_id = ?, size_id = ?, condition_id = ?, item_name = ?, "
+                    + "brand = ?, description = ?, points_value = ?, status = ? WHERE item_id = ?";
 
     private static final String UPDATE_STATUS =
             "UPDATE ITEMS SET status = ? WHERE item_id = ?";
@@ -112,6 +125,74 @@ public class ItemDAO {
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    @Override
+    public Integer insert(Item item) throws SQLException {
+        return insertItem(
+                item.getOwnerUserId(),
+                item.getCategoryId(),
+                item.getSizeId(),
+                item.getConditionId(),
+                item.getItemName(),
+                item.getBrand(),
+                item.getDescription(),
+                item.getPointsValue(),
+                null
+        );
+    }
+
+    @Override
+    public Optional<Item> findById(Integer id) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_ITEM_BY_ID)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapItem(rs));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<Item> findAll() throws SQLException {
+        List<Item> items = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_ALL_ITEMS);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                items.add(mapItem(rs));
+            }
+        }
+        return items;
+    }
+
+    @Override
+    public void update(Item item) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(UPDATE_ITEM)) {
+            ps.setInt(1, item.getOwnerUserId());
+            ps.setInt(2, item.getCategoryId());
+            ps.setInt(3, item.getSizeId());
+            ps.setInt(4, item.getConditionId());
+            ps.setString(5, item.getItemName());
+            ps.setString(6, item.getBrand());
+            ps.setString(7, item.getDescription());
+            ps.setInt(8, item.getPointsValue());
+            ps.setString(9, item.getStatus());
+            ps.setInt(10, item.getItemId());
+            int n = ps.executeUpdate();
+            if (n != 1) {
+                throw new SQLException("Failed to update item with id " + item.getItemId());
+            }
+        }
+    }
+
+    @Override
+    public void delete(Integer id) throws SQLException {
+        deleteItem(id);
     }
 
     public List<ItemBrowseRow> listAvailableExcludingOwner(int ownerUserIdToExclude) throws SQLException {
@@ -174,20 +255,24 @@ public class ItemDAO {
                 if (!rs.next()) {
                     return null;
                 }
-                Item item = new Item();
-                item.setItemId(rs.getInt("item_id"));
-                item.setOwnerUserId(rs.getInt("owner_user_id"));
-                item.setCategoryId(rs.getInt("category_id"));
-                item.setSizeId(rs.getInt("size_id"));
-                item.setConditionId(rs.getInt("condition_id"));
-                item.setItemName(rs.getString("item_name"));
-                item.setBrand(rs.getString("brand"));
-                item.setDescription(rs.getString("description"));
-                item.setPointsValue(rs.getInt("points_value"));
-                item.setStatus(rs.getString("status"));
-                return item;
+                return mapItem(rs);
             }
         }
+    }
+
+    private static Item mapItem(ResultSet rs) throws SQLException {
+        Item item = new Item();
+        item.setItemId(rs.getInt("item_id"));
+        item.setOwnerUserId(rs.getInt("owner_user_id"));
+        item.setCategoryId(rs.getInt("category_id"));
+        item.setSizeId(rs.getInt("size_id"));
+        item.setConditionId(rs.getInt("condition_id"));
+        item.setItemName(rs.getString("item_name"));
+        item.setBrand(rs.getString("brand"));
+        item.setDescription(rs.getString("description"));
+        item.setPointsValue(rs.getInt("points_value"));
+        item.setStatus(rs.getString("status"));
+        return item;
     }
 
     public void updateStatus(Connection conn, int itemId, String status) throws SQLException {

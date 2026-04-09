@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * Form to insert a clothing item into {@code ITEMS} (and optional {@code ITEM_IMAGES}).
  */
-public class AddItemFrame extends JFrame {
+public class AddItemFrame extends BaseFrame {
 
     private final DashboardFrame parent;
     private final ItemDAO itemDAO = new ItemDAO();
@@ -41,10 +41,9 @@ public class AddItemFrame extends JFrame {
     private final JComboBox<Lookup> conditionCombo = new JComboBox<>();
 
     public AddItemFrame(DashboardFrame parent) {
-        super("Add Item");
+        super("Add Item", 480, 460);
         this.parent = parent;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(480, 460);
         setLocationRelativeTo(parent);
 
         JPanel root = new JPanel(new BorderLayout(8, 8));

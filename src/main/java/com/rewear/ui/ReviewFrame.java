@@ -28,7 +28,7 @@ import java.util.Vector;
 /**
  * After an exchange, submit a review into {@code REVIEWS}.
  */
-public class ReviewFrame extends JFrame {
+public class ReviewFrame extends BaseFrame {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -40,10 +40,9 @@ public class ReviewFrame extends JFrame {
     private final List<ExchangeRecord> rows = new ArrayList<>();
 
     public ReviewFrame(DashboardFrame parent) {
-        super("Reviews");
+        super("Reviews", 920, 440);
         this.parent = parent;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(920, 440);
         setLocationRelativeTo(parent);
 
         String[] cols = {"Exchange ID", "Item", "Other party", "When"};

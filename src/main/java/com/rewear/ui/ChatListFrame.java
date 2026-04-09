@@ -21,16 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class ChatListFrame extends JFrame {
+public class ChatListFrame extends BaseFrame {
     private final ExchangeDAO exchangeDAO = new ExchangeDAO();
     private final DefaultTableModel tableModel;
     private final JTable table;
     private final List<ExchangeRecord> rows = new ArrayList<>();
 
     public ChatListFrame(JFrame parent) {
-        super("Chats & Pickup");
+        super("Chats & Pickup", 860, 420);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(860, 420);
         setLocationRelativeTo(parent);
 
         String[] cols = {"Exchange ID", "Item", "Other Party", "Status"};

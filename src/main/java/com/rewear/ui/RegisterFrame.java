@@ -21,7 +21,7 @@ import java.sql.SQLException;
 /**
  * Registration form inserts into {@code USERS}.
  */
-public class RegisterFrame extends JFrame {
+public class RegisterFrame extends BaseFrame {
 
     private final JTextField usernameField = new JTextField(20);
     private final JTextField emailField = new JTextField(20);
@@ -30,10 +30,8 @@ public class RegisterFrame extends JFrame {
     private final UserDAO userDAO = new UserDAO();
 
     public RegisterFrame() {
-        super("ReWear – Register");
+        super("ReWear – Register", 440, 350);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(440, 350);
-        setLocationRelativeTo(null);
 
         JPanel root = new JPanel(new BorderLayout(8, 8));
         root.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
@@ -73,7 +71,7 @@ public class RegisterFrame extends JFrame {
         
         // Basic empty field validation
         if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "All fields are required.", "Validation", JOptionPane.WARNING_MESSAGE);
+            showWarning("All fields are required.", "Validation");
             return;
         }
         
@@ -92,22 +90,22 @@ public class RegisterFrame extends JFrame {
             
             // Check if username already exists
             if (userDAO.usernameExists(username)) {
-                JOptionPane.showMessageDialog(this, "Username already taken.", "Validation", JOptionPane.WARNING_MESSAGE);
+                showWarning("Username already taken.", "Validation");
                 return;
             }
             
             // Register the user
             userDAO.register(username, email, password);
-            JOptionPane.showMessageDialog(this, "Account created successfully!\nYou can log in now.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            showInfo("Account created successfully!\nYou can log in now.", "Success");
             backToLogin();
             
         } catch (ValidationException vex) {
-            JOptionPane.showMessageDialog(this, vex.getMessage(), "Validation Error", JOptionPane.WARNING_MESSAGE);
+            showWarning(vex.getMessage(), "Validation Error");
             // Clear password fields on validation error
             passwordField.setText("");
             confirmPasswordField.setText("");
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError("Database error: " + ex.getMessage(), "Error");
         }
     }
 

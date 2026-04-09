@@ -31,7 +31,7 @@ import java.util.Vector;
 /**
  * Lists the current user's listed items.
  */
-public class MyItemsFrame extends JFrame {
+public class MyItemsFrame extends BaseFrame {
 
     private final DashboardFrame parent;
     private final ItemDAO itemDAO = new ItemDAO();
@@ -43,10 +43,9 @@ public class MyItemsFrame extends JFrame {
     private final JLabel imagePreview = new JLabel("No image", SwingConstants.CENTER);
 
     public MyItemsFrame(DashboardFrame parent) {
-        super("My Items");
+        super("My Items", 980, 460);
         this.parent = parent;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(980, 460);
         setLocationRelativeTo(parent);
 
         String[] cols = {"ID", "Name", "Brand", "Points", "Category", "Size", "Condition", "Status", "Description"};

@@ -10,12 +10,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Data access for {@code USERS} and {@code POINTS_LOG}.
  */
-public class UserDAO {
+public class UserDAO implements IDataAccessObject<User, Integer> {
 
     private static final String INSERT_USER =
             "INSERT INTO USERS (username, email, password_hash, points_balance) VALUES (?, ?, ?, ?)";
@@ -30,6 +32,15 @@ public class UserDAO {
 
     private static final String SELECT_BY_USERNAME =
             "SELECT user_id FROM USERS WHERE username = ?";
+
+    private static final String SELECT_ALL_USERS =
+            "SELECT user_id, username, email, password_hash, points_balance, created_at FROM USERS";
+
+    private static final String UPDATE_USER =
+            "UPDATE USERS SET username = ?, email = ?, password_hash = ?, points_balance = ? WHERE user_id = ?";
+
+    private static final String DELETE_USER =
+            "DELETE FROM USERS WHERE user_id = ?";
 
     private static final String SELECT_POINTS_FOR_UPDATE =
             "SELECT points_balance FROM USERS WHERE user_id = ? FOR UPDATE";
@@ -60,6 +71,62 @@ public class UserDAO {
         throw new SQLException("Could not obtain new user id.");
     }
 
+    @Override
+    public Integer insert(User user) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(INSERT_USER, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getEmail());
+            ps.setString(3, user.getPasswordHash());
+            ps.setInt(4, user.getPointsBalance() > 0 ? user.getPointsBalance() : 100);
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return keys.getInt(1);
+                }
+            }
+        }
+        throw new SQLException("Could not obtain new user id.");
+    }
+
+    @Override
+    public List<User> findAll() throws SQLException {
+        List<User> users = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_ALL_USERS);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                users.add(mapUser(rs));
+            }
+        }
+        return users;
+    }
+
+    @Override
+    public void update(User user) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(UPDATE_USER)) {
+            ps.setString(1, user.getUsername());
+            ps.setString(2, user.getEmail());
+            ps.setString(3, user.getPasswordHash());
+            ps.setInt(4, user.getPointsBalance());
+            ps.setInt(5, user.getUserId());
+            int n = ps.executeUpdate();
+            if (n != 1) {
+                throw new SQLException("Failed to update user with id " + user.getUserId());
+            }
+        }
+    }
+
+    @Override
+    public void delete(Integer userId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(DELETE_USER)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        }
+    }
+
     /**
      * Validates credentials; demo stores password in {@code password_hash} column as plain text.
      */
@@ -77,7 +144,8 @@ public class UserDAO {
         return Optional.empty();
     }
 
-    public Optional<User> findById(int userId) throws SQLException {
+    @Override
+    public Optional<User> findById(Integer userId) throws SQLException {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(SELECT_BY_ID)) {
             ps.setInt(1, userId);

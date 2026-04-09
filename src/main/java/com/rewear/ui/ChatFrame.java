@@ -21,7 +21,7 @@ import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class ChatFrame extends JFrame {
+public class ChatFrame extends BaseFrame {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final int exchangeId;
@@ -31,10 +31,9 @@ public class ChatFrame extends JFrame {
     private final Timer refreshTimer;
 
     public ChatFrame(JFrame parent, int exchangeId, String itemName, String otherParty) {
-        super("Chat - Exchange #" + exchangeId);
+        super("Chat - Exchange #" + exchangeId, 700, 480);
         this.exchangeId = exchangeId;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(700, 480);
         setLocationRelativeTo(parent);
 
         JPanel root = new JPanel(new BorderLayout(8, 8));

@@ -23,17 +23,15 @@ import java.sql.SQLException;
 /**
  * Login screen: validates credentials against {@code USERS}.
  */
-public class LoginFrame extends JFrame {
+public class LoginFrame extends BaseFrame {
 
     private final JTextField usernameField = new JTextField(20);
     private final JPasswordField passwordField = new JPasswordField(20);
     private final UserDAO userDAO = new UserDAO();
 
     public LoginFrame() {
-        super("ReWear – Login");
+        super("ReWear – Login", 420, 260);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(420, 260);
-        setLocationRelativeTo(null);
 
         JPanel root = new JPanel(new BorderLayout(8, 8));
         root.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
@@ -67,7 +65,7 @@ public class LoginFrame extends JFrame {
         
         // Basic empty field validation
         if (username.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Enter username and password.", "Validation", JOptionPane.WARNING_MESSAGE);
+            showWarning("Enter username and password.", "Validation");
             return;
         }
         
@@ -77,7 +75,7 @@ public class LoginFrame extends JFrame {
             
             var opt = userDAO.login(username, password);
             if (opt.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Invalid username or password.", "Login failed", JOptionPane.ERROR_MESSAGE);
+                showError("Invalid username or password.", "Login failed");
                 return;
             }
             User u = opt.get();
@@ -85,9 +83,9 @@ public class LoginFrame extends JFrame {
             dispose();
             new DashboardFrame().setVisible(true);
         } catch (ValidationException vex) {
-            JOptionPane.showMessageDialog(this, vex.getMessage(), "Validation Error", JOptionPane.WARNING_MESSAGE);
+            showWarning(vex.getMessage(), "Validation Error");
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError("Database error: " + ex.getMessage(), "Error");
         }
     }
 

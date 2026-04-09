@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class ManageRequestsFrame extends JFrame {
+public class ManageRequestsFrame extends BaseFrame {
     private final DashboardFrame parent;
     private final ExchangeDAO exchangeDAO = new ExchangeDAO();
     private final DefaultTableModel tableModel;
@@ -29,10 +29,9 @@ public class ManageRequestsFrame extends JFrame {
     private final List<ExchangeRecord> rows = new ArrayList<>();
 
     public ManageRequestsFrame(DashboardFrame parent) {
-        super("Incoming Requests");
+        super("Incoming Requests", 860, 420);
         this.parent = parent;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(860, 420);
         setLocationRelativeTo(parent);
 
         String[] cols = {"Exchange ID", "Item", "Requester", "Status"};

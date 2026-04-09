@@ -17,16 +17,14 @@ import java.sql.SQLException;
 /**
  * Post-login menu: Add Item, Browse, My Items, Reviews, Logout.
  */
-public class DashboardFrame extends JFrame {
+public class DashboardFrame extends BaseFrame {
 
     private final JLabel welcomeLabel = new JLabel("", SwingConstants.CENTER);
     private final UserDAO userDAO = new UserDAO();
 
     public DashboardFrame() {
-        super("ReWear – Dashboard");
+        super("ReWear – Dashboard", 420, 360);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(420, 360);
-        setLocationRelativeTo(null);
 
         JPanel root = new JPanel(new BorderLayout(8, 8));
         root.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));

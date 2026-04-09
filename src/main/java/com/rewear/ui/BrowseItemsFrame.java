@@ -32,7 +32,7 @@ import java.util.Vector;
 /**
  * Lists available items from other users; supports requesting an exchange.
  */
-public class BrowseItemsFrame extends JFrame {
+public class BrowseItemsFrame extends BaseFrame {
 
     private final DashboardFrame parent;
     private final ItemDAO itemDAO = new ItemDAO();
@@ -45,10 +45,9 @@ public class BrowseItemsFrame extends JFrame {
     private final JLabel imagePreview = new JLabel("No image", SwingConstants.CENTER);
 
     public BrowseItemsFrame(DashboardFrame parent) {
-        super("Browse Items");
+        super("Browse Items", 900, 420);
         this.parent = parent;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(900, 420);
         setLocationRelativeTo(parent);
 
         String[] cols = {"ID", "Name", "Brand", "Owner", "Points", "Category", "Size", "Condition", "Description"};
