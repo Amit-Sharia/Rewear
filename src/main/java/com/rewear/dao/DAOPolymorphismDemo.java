@@ -9,14 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Demonstration of Interface Polymorphism in ReWear Project
- *
- * This class shows how the IDataAccessObject interface enables polymorphism:
- * - Same interface methods
- * - Different implementations for different entity types
- * - Consistent API across all DAOs
- */
+
 public class DAOPolymorphismDemo {
 
     public static void main(String[] args) {
@@ -46,12 +39,20 @@ public class DAOPolymorphismDemo {
             Optional<User> user = userDao.findById(1);           // Finds from USERS
             Optional<Item> item = itemDao.findById(1);           // Finds from ITEMS
             Optional<ChatMessage> message = chatDao.findById(1); // Finds from EXCHANGE_MESSAGES
+            
+            System.out.println("User found: " + user.isPresent());
+            System.out.println("Item found: " + item.isPresent());
+            System.out.println("Message found: " + message.isPresent());
 
             // 3. FIND ALL operations (polymorphic)
             System.out.println("=== FIND ALL Operations (Polymorphism) ===");
             List<User> users = userDao.findAll();              // SELECT * FROM USERS
             List<Item> items = itemDao.findAll();              // SELECT * FROM ITEMS
             List<ChatMessage> messages = chatDao.findAll();    // SELECT * FROM EXCHANGE_MESSAGES
+            
+            System.out.println("Total users: " + users.size());
+            System.out.println("Total items: " + items.size());
+            System.out.println("Total messages: " + messages.size());
 
             // 4. UPDATE operations (polymorphic)
             System.out.println("=== UPDATE Operations (Polymorphism) ===");
