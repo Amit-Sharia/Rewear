@@ -8,6 +8,16 @@ import java.util.Optional;
  * Generic Data Access Object interface defining standard CRUD operations.
  * All DAO implementations must follow this contract.
  *
+ * This interface enables POLYMORPHISM:
+ * - UserDAO, ItemDAO, ChatDAO all implement the same interface
+ * - Same method names (insert, findById, etc.) but different behaviors
+ * - Allows writing generic code that works with any entity type
+ *
+ * Example polymorphism:
+ *   IDataAccessObject<User, Integer> userDao = new UserDAO();
+ *   IDataAccessObject<Item, Integer> itemDao = new ItemDAO();
+ *   // Same interface, different implementations!
+ *
  * @param <T> the entity type managed by this DAO
  * @param <ID> the primary key type
  */
