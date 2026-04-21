@@ -43,7 +43,7 @@ public class ChatListFrame extends BaseFrame {
 
         JPanel root = new JPanel(new BorderLayout(8, 8));
         root.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        root.add(new JLabel("Completed exchanges available for chat", SwingConstants.CENTER), BorderLayout.NORTH);
+        root.add(new JLabel("Accepted/completed exchanges available for chat", SwingConstants.CENTER), BorderLayout.NORTH);
         root.add(new JScrollPane(table), BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));

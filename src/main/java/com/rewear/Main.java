@@ -1,10 +1,10 @@
 package com.rewear;
 
 import com.rewear.ui.LoginFrame;
-import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.LookAndFeel;
 
 /**
  * Entry point: launches the Swing login window on the EDT.
@@ -15,12 +15,20 @@ public final class Main {
     }
 
     public static void main(String[] args) {
-        try {
-            FlatLightLaf.setup();
-            UIManager.setLookAndFeel(new FlatLightLaf());
-        } catch (Exception ignored) {
-            // default L&F
-        }
+        installLookAndFeelSafely();
         SwingUtilities.invokeLater(() -> new LoginFrame().setVisible(true));
+    }
+
+    private static void installLookAndFeelSafely() {
+        try {
+            // Load FlatLaf only if it is present on the runtime classpath.
+            Class<?> lafClass = Class.forName("com.formdev.flatlaf.FlatLightLaf");
+            Object lafInstance = lafClass.getDeclaredConstructor().newInstance();
+            if (lafInstance instanceof LookAndFeel lookAndFeel) {
+                UIManager.setLookAndFeel(lookAndFeel);
+            }
+        } catch (Throwable ignored) {
+            // Keep Swing default look and feel if FlatLaf is unavailable.
+        }
     }
 }

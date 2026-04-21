@@ -9,7 +9,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,11 +44,14 @@ public class UserDAO implements IDataAccessObject<User, Integer> {
     private static final String SELECT_POINTS_FOR_UPDATE =
             "SELECT points_balance FROM USERS WHERE user_id = ? FOR UPDATE";
 
-    private static final String UPDATE_POINTS =
-            "UPDATE USERS SET points_balance = points_balance + ? WHERE user_id = ?";
-
     private static final String INSERT_POINTS_LOG =
             "INSERT INTO POINTS_LOG (user_id, delta, reason, related_exchange_id) VALUES (?, ?, ?, ?)";
+
+    private static final String SELECT_AVAILABLE_ITEMS_COUNT =
+            "SELECT fn_user_available_items(?)";
+
+    private static final String SELECT_OWNER_AVERAGE_RATING =
+            "SELECT fn_owner_average_rating(?)";
 
     /**
      * Registers a new user with an initial points balance (default 100).
@@ -183,20 +185,6 @@ public class UserDAO implements IDataAccessObject<User, Integer> {
         }
     }
 
-    /**
-     * Adjusts points inside an existing transaction (connection must not be auto-commit).
-     */
-    public void adjustPoints(Connection conn, int userId, int delta) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(UPDATE_POINTS)) {
-            ps.setInt(1, delta);
-            ps.setInt(2, userId);
-            int n = ps.executeUpdate();
-            if (n != 1) {
-                throw new SQLException("Failed to update points for user " + userId);
-            }
-        }
-    }
-
     public void insertPointsLog(Connection conn, int userId, int delta, String reason, Integer relatedExchangeId)
             throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(INSERT_POINTS_LOG)) {
@@ -219,7 +207,6 @@ public class UserDAO implements IDataAccessObject<User, Integer> {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                adjustPoints(conn, userId, delta);
                 insertPointsLog(conn, userId, delta, reason, null);
                 conn.commit();
             } catch (SQLException ex) {
@@ -229,6 +216,32 @@ public class UserDAO implements IDataAccessObject<User, Integer> {
                 conn.setAutoCommit(true);
             }
         }
+    }
+
+    public int getAvailableItemsCount(int userId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_AVAILABLE_ITEMS_COUNT)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
+    public double getOwnerAverageRating(int userId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_OWNER_AVERAGE_RATING)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble(1);
+                }
+            }
+        }
+        return 0.0;
     }
 
     private static User mapUser(ResultSet rs) throws SQLException {

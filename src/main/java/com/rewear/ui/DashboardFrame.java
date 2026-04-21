@@ -20,6 +20,7 @@ import java.sql.SQLException;
 public class DashboardFrame extends BaseFrame {
 
     private final JLabel welcomeLabel = new JLabel("", SwingConstants.CENTER);
+    private final JLabel statsLabel = new JLabel("", SwingConstants.CENTER);
     private final UserDAO userDAO = new UserDAO();
 
     public DashboardFrame() {
@@ -30,7 +31,11 @@ public class DashboardFrame extends BaseFrame {
         root.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
         welcomeLabel.setFont(welcomeLabel.getFont().deriveFont(welcomeLabel.getFont().getSize() + 2f));
-        root.add(welcomeLabel, BorderLayout.NORTH);
+        statsLabel.setFont(statsLabel.getFont().deriveFont(statsLabel.getFont().getSize() - 1f));
+        JPanel header = new JPanel(new GridLayout(0, 1, 0, 4));
+        header.add(welcomeLabel);
+        header.add(statsLabel);
+        root.add(header, BorderLayout.NORTH);
 
         JPanel grid = new JPanel(new GridLayout(0, 1, 8, 8));
         JButton addBtn = new JButton("Add Item");
@@ -75,6 +80,7 @@ public class DashboardFrame extends BaseFrame {
         var u = Session.getCurrentUser();
         if (u == null) {
             welcomeLabel.setText("Not logged in");
+            statsLabel.setText("");
             return;
         }
         try {
@@ -86,6 +92,13 @@ public class DashboardFrame extends BaseFrame {
         }
         if (u != null) {
             welcomeLabel.setText("Hello, " + u.getUsername() + " — Points: " + u.getPointsBalance());
+            try {
+                int availableItems = userDAO.getAvailableItemsCount(u.getUserId());
+                double avgRating = userDAO.getOwnerAverageRating(u.getUserId());
+                statsLabel.setText(String.format("Available Items: %d | Average Rating: %.2f", availableItems, avgRating));
+            } catch (SQLException ignored) {
+                statsLabel.setText("Available Items: n/a | Average Rating: n/a");
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import com.rewear.DBConnection;
 import com.rewear.models.ExchangeRecord;
 import com.rewear.models.Item;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -53,7 +54,7 @@ public class ExchangeDAO {
                     + "JOIN EXCHANGE_ITEMS ei ON ei.exchange_id = e.exchange_id "
                     + "JOIN ITEMS i ON i.item_id = ei.item_id "
                     + "JOIN USERS ur ON ur.user_id = e.requester_user_id "
-                    + "WHERE e.owner_user_id = ? AND e.status = 'PENDING' "
+                    + "WHERE e.owner_user_id = ? AND e.status IN ('PENDING', 'ACCEPTED') "
                     + "ORDER BY e.created_at DESC";
 
     private static final String SELECT_CHAT_ELIGIBLE =
@@ -66,7 +67,7 @@ public class ExchangeDAO {
                     + "JOIN USERS ur ON ur.user_id = e.requester_user_id "
                     + "JOIN USERS uo ON uo.user_id = e.owner_user_id "
                     + "WHERE (e.requester_user_id = ? OR e.owner_user_id = ?) "
-                    + "AND e.status = 'COMPLETED' "
+                    + "AND e.status IN ('ACCEPTED', 'COMPLETED') "
                     + "ORDER BY e.created_at DESC";
 
     private static final String SELECT_EXCHANGE_FOR_OWNER_UPDATE =
@@ -78,7 +79,9 @@ public class ExchangeDAO {
     private static final String UPDATE_EXCHANGE_STATUS =
             "UPDATE EXCHANGES SET status = ? WHERE exchange_id = ?";
 
-    private final UserDAO userDAO = new UserDAO();
+    private static final String CALL_COMPLETE_EXCHANGE =
+            "{CALL sp_complete_exchange(?)}";
+
     private final ItemDAO itemDAO = new ItemDAO();
 
     /**
@@ -183,22 +186,35 @@ public class ExchangeDAO {
                 if (item == null || !"AVAILABLE".equalsIgnoreCase(item.getStatus())) {
                     throw new SQLException("Item is no longer available.");
                 }
+                updateExchangeStatus(conn, exchangeId, "ACCEPTED");
+                conn.commit();
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
 
-                int cost = item.getPointsValue();
-                int requesterBalance = userDAO.getPointsBalanceForUpdate(conn, ex.requesterUserId);
-                if (requesterBalance < cost) {
-                    updateExchangeStatus(conn, exchangeId, "REJECTED");
-                    conn.commit();
-                    throw new SQLException("Requester no longer has enough points. Request rejected.");
+    public void completeAcceptedRequest(int exchangeId, int ownerUserId) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                ExchangeLockRow ex = loadExchangeForOwnerUpdate(conn, exchangeId);
+                if (ex == null) {
+                    throw new SQLException("Exchange not found.");
                 }
-
-                userDAO.adjustPoints(conn, ex.requesterUserId, -cost);
-                userDAO.adjustPoints(conn, ex.ownerUserId, cost);
-                userDAO.insertPointsLog(conn, ex.requesterUserId, -cost, "Accepted exchange #" + exchangeId, exchangeId);
-                userDAO.insertPointsLog(conn, ex.ownerUserId, cost, "Accepted exchange #" + exchangeId, exchangeId);
-
-                itemDAO.updateStatus(conn, item.getItemId(), "EXCHANGED");
-                updateExchangeStatus(conn, exchangeId, "COMPLETED");
+                if (ex.ownerUserId != ownerUserId) {
+                    throw new SQLException("You are not allowed to complete this exchange.");
+                }
+                if (!"ACCEPTED".equalsIgnoreCase(ex.status)) {
+                    throw new SQLException("Only ACCEPTED requests can be completed.");
+                }
+                try (CallableStatement cs = conn.prepareCall(CALL_COMPLETE_EXCHANGE)) {
+                    cs.setInt(1, exchangeId);
+                    cs.execute();
+                }
                 conn.commit();
             } catch (SQLException ex) {
                 conn.rollback();

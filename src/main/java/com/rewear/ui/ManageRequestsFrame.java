@@ -45,21 +45,24 @@ public class ManageRequestsFrame extends BaseFrame {
 
         JPanel root = new JPanel(new BorderLayout(8, 8));
         root.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        root.add(new JLabel("Requests waiting for your decision", SwingConstants.CENTER), BorderLayout.NORTH);
+        root.add(new JLabel("Pending or accepted requests", SwingConstants.CENTER), BorderLayout.NORTH);
         root.add(new JScrollPane(table), BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton refresh = new JButton("Refresh");
         JButton reject = new JButton("Reject");
-        JButton accept = new JButton("Accept + Open Chat");
+        JButton accept = new JButton("Accept");
+        JButton complete = new JButton("Complete");
         JButton close = new JButton("Close");
         refresh.addActionListener(e -> reload());
         reject.addActionListener(e -> rejectRequest());
         accept.addActionListener(e -> acceptRequest());
+        complete.addActionListener(e -> completeRequest());
         close.addActionListener(e -> dispose());
         actions.add(refresh);
         actions.add(reject);
         actions.add(accept);
+        actions.add(complete);
         actions.add(close);
         root.add(actions, BorderLayout.SOUTH);
 
@@ -128,11 +131,41 @@ public class ManageRequestsFrame extends BaseFrame {
         }
         try {
             exchangeDAO.acceptRequest(r.getExchangeId(), u.getUserId());
-            JOptionPane.showMessageDialog(this, "Request accepted. Chat opened for pickup details.",
+            JOptionPane.showMessageDialog(this, "Request accepted. Complete it after handoff/delivery.",
                     "Done", JOptionPane.INFORMATION_MESSAGE);
             parent.refreshHeader();
             reload();
-            new ChatFrame(this, r.getExchangeId(), r.getItemName(), r.getOtherPartyUsername()).setVisible(true);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void completeRequest() {
+        var u = Session.getCurrentUser();
+        if (u == null) {
+            return;
+        }
+        ExchangeRecord r = selected();
+        if (r == null) {
+            return;
+        }
+        if (!"ACCEPTED".equalsIgnoreCase(r.getStatus())) {
+            JOptionPane.showMessageDialog(this, "Only ACCEPTED requests can be completed.",
+                    "Validation", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Complete exchange #" + r.getExchangeId() + " now?\nThis will transfer points and mark items exchanged.",
+                "Confirm completion", JOptionPane.OK_CANCEL_OPTION);
+        if (confirm != JOptionPane.OK_OPTION) {
+            return;
+        }
+        try {
+            exchangeDAO.completeAcceptedRequest(r.getExchangeId(), u.getUserId());
+            JOptionPane.showMessageDialog(this, "Exchange completed successfully.", "Done",
+                    JOptionPane.INFORMATION_MESSAGE);
+            parent.refreshHeader();
+            reload();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }

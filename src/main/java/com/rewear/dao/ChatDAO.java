@@ -21,7 +21,7 @@ public class ChatDAO implements IDataAccessObject<ChatMessage, Integer> {
                     + "JOIN EXCHANGES e ON e.exchange_id = m.exchange_id "
                     + "WHERE m.exchange_id = ? "
                     + "AND (e.requester_user_id = ? OR e.owner_user_id = ?) "
-                    + "AND e.status = 'COMPLETED' "
+                    + "AND e.status IN ('ACCEPTED', 'COMPLETED') "
                     + "ORDER BY m.sent_at ASC";
 
     private static final String INSERT_MESSAGE =
@@ -29,7 +29,7 @@ public class ChatDAO implements IDataAccessObject<ChatMessage, Integer> {
                     + "SELECT ?, ?, ? FROM EXCHANGES e "
                     + "WHERE e.exchange_id = ? "
                     + "AND (e.requester_user_id = ? OR e.owner_user_id = ?) "
-                    + "AND e.status = 'COMPLETED'";
+                    + "AND e.status IN ('ACCEPTED', 'COMPLETED')";
 
     private static final String SELECT_BY_ID =
             "SELECT m.message_id, m.exchange_id, m.sender_user_id, u.username, m.message_text, m.sent_at "
